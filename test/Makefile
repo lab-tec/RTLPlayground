@@ -29,7 +29,8 @@ TESTS = $(BUILDDIR)/test_cmd_editor \
         $(BUILDDIR)/test_page_json \
         $(BUILDDIR)/test_httpd_tx \
         $(BUILDDIR)/test_tick_gate \
-        $(BUILDDIR)/test_rollback
+        $(BUILDDIR)/test_rollback \
+        $(BUILDDIR)/test_sflow
 
 # The table tests link the register mock and one environment file; stub/
 # stands in for the two headers a firmware build generates.
@@ -48,6 +49,10 @@ $(BUILDDIR)/test_cmd_editor: test_cmd_editor.c support.c $(SRCROOT)/cmd_editor.c
 # rtl837x_port.c and httpd/page_impl.c are compiled UNMODIFIED from the firmware tree.
 $(BUILDDIR)/test_port_tables: test_port_tables.c $(TABLE_ENV) hw_mock.h | $(BUILDDIR)
 	$(CC) $(CFLAGS) $(filter %.c,$^) -o $@ $(LDFLAGS)
+
+# sflow.c is compiled UNMODIFIED against the register mock.
+$(BUILDDIR)/test_sflow: test_sflow.c hw_mock.c $(SRCROOT)/sflow.c | $(BUILDDIR)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 # rollback.c is compiled UNMODIFIED; the test carries the flash model.
 $(BUILDDIR)/test_rollback: test_rollback.c $(SRCROOT)/rollback.c | $(BUILDDIR)
