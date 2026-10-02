@@ -20,6 +20,8 @@
 #include "sfp.h"
 #include "dhcp.h"
 #include "syslog.h"
+#include "rollback.h"
+#include "bench.h"
 #include "uip/uip.h"
 #include "version.h"
 
@@ -1954,6 +1956,13 @@ void cmd_parser(void) __banked
 		} else if (cmd_compare(0, "health")) {
 			health_show();
 #endif
+		} else if (cmd_compare(0, "bench")) {
+			bench_run();
+		} else if (cmd_compare(0, "rollback")) {
+			if (cmd_words_len > 1 && cmd_compare(1, "restore"))
+				rollback_restore();
+			else
+				rollback_status();
 		} else if (cmd_compare(0, "pvid")) {
 			if (cmd_words_len == 3 && cmd_parse_port_separator(cmd_words_b[1]) != 0
 			    && atoi_short(cmd_words_b[2]) && atoi_results_short && atoi_results_short <= 4094)

@@ -19,6 +19,7 @@
 #include "dhcp.h"
 #include "cmd_parser.h"
 #include "cmd_editor.h"
+#include "rollback.h"
 #include "uip/uipopt.h"
 #include "uip/uip.h"
 #include "uip/uip_arp.h"
@@ -1580,6 +1581,7 @@ void check_and_flash_update_image(void)
 		}
 		if (crc_value == 0xb001) {
 			print_string("Checksum OK.\nUpdate in progress, moving firmware to start of flash");
+			rollback_backup();
 			source = FIRMWARE_UPLOAD_START;
 			// Don't copy the config area at the end of flash
 			for (i = 0; i < CONFIG_START/FLASH_BUF_SIZE; i++) {
@@ -1754,6 +1756,9 @@ void main(void)
 	delay(1000);
 
 	check_and_flash_update_image();
+	/* Before the rest of the bring-up, so a firmware that hangs there can
+	 * still be rolled back with the button. */
+	early_boot_handle_button();
 
 	syslog_init();
 
@@ -1800,8 +1805,6 @@ void main(void)
 	print_string("\nVerifying PHY settings:\n");
 //	p031f.a610:2058 p041f.a610:2058  p051f.a610:2058  r4f3c:00000000 p061f.a610:2058 p071f.a610:2058 
 	port_stats_print();
-
-	early_boot_handle_button();
 
 	execute_config();
 	// After the config so the entry lands in the final management VLAN

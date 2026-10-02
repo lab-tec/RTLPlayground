@@ -16,6 +16,7 @@
 #include "machine.h"
 #include "phy.h"
 #include "boot.h"
+#include "rollback.h"
 
 extern __code const struct machine machine;
 extern __xdata struct machine_runtime machine_detected;
@@ -74,6 +75,11 @@ void early_boot_handle_button(void) __banked
 	if (gpio_pin_test(machine.reset_pin))
 		return;
 
+	/* 3-8 s rolls the firmware back to the backup kept by the last update
+	 * (rollback.c); the LED blinks fast for as long as letting go does that.
+	 * 10-30 s restores the default configuration. */
+	const __xdata uint32_t rollback_min_ticks = 3UL * SYS_TICK_HZ;
+	const __xdata uint32_t rollback_max_ticks = 8UL * SYS_TICK_HZ;
 	const __xdata uint32_t min_hold_ticks = 10UL * SYS_TICK_HZ;
 	const __xdata uint32_t max_hold_ticks = 30UL * SYS_TICK_HZ;
 	const __xdata uint32_t blink_ticks = SYS_TICK_HZ / 10;      // 100 ms
@@ -92,21 +98,33 @@ void early_boot_handle_button(void) __banked
 			return;
 		}
 
-		// Double blink pattern while button is held:
-		// ON (100ms), OFF (100ms), ON (100ms), OFF (500ms)
-		__xdata uint32_t step_ticks = (blink_step == 3) ? pause_ticks : blink_ticks;
-		if ((ticks - last_blink_step) >= step_ticks) {
-			blink_step = (blink_step + 1) & 0x3;
-			set_sys_led_state((blink_step == 0 || blink_step == 2) ? SYS_LED_ON : SYS_LED_OFF);
+		if (held_ticks >= rollback_min_ticks && held_ticks < rollback_max_ticks) {
+			set_sys_led_state(SYS_LED_FAST);
 			last_blink_step = ticks;
+		} else {
+			// Double blink pattern while button is held:
+			// ON (100ms), OFF (100ms), ON (100ms), OFF (500ms)
+			__xdata uint32_t step_ticks = (blink_step == 3) ? pause_ticks : blink_ticks;
+			if ((ticks - last_blink_step) >= step_ticks) {
+				blink_step = (blink_step + 1) & 0x3;
+				set_sys_led_state((blink_step == 0 || blink_step == 2) ? SYS_LED_ON : SYS_LED_OFF);
+				last_blink_step = ticks;
+			}
 		}
 
 		PCON |= 1;
 	}
 
-	set_sys_led_state(SYS_LED_ON);
+	/* Slow: the boot goes on (this runs before the network comes up) */
+	set_sys_led_state(SYS_LED_SLOW);
+	__xdata uint32_t held = ticks - start_ticks;
 
-	if ((ticks - start_ticks) >= min_hold_ticks) {
+	if (held >= rollback_min_ticks && held < rollback_max_ticks) {
+		print_string("[Button held 3s-8s at boot; rolling back the firmware]\n");
+		set_sys_led_state(SYS_LED_FAST);
+		rollback_restore();	/* resets once the backup is staged */
+		set_sys_led_state(SYS_LED_SLOW);
+	} else if (held >= min_hold_ticks) {
 		print_string("[Button held 10s-30s at boot; restoring default config]\n");
 		set_sys_led_state(SYS_LED_FAST);
 		flash_default_config();

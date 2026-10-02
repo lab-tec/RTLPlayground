@@ -70,7 +70,9 @@ SRCS = \
 	boot.c \
 	sfp.c \
 	syslog.c \
-	udp_apps.c
+	udp_apps.c \
+	rollback.c \
+	bench.c
 
 # RTL837x
 SRCS += \
