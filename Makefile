@@ -75,7 +75,9 @@ SRCS = \
 	udp_apps.c \
 	rollback.c \
 	bench.c \
-	memtest.c
+	memtest.c \
+	cable.c \
+	cfgpass.c
 
 # RTL837x
 SRCS += \

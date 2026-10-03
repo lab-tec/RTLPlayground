@@ -36,6 +36,7 @@ static __xdata uint8_t bench_dst[256];
 static __xdata uint32_t bench_num;	/* argument of bench_dec() */
 static __xdata uint8_t bench_i;
 static __xdata uint32_t bench_p;
+static __xdata uint8_t bench_tenth;	/* bench_dec() uses bench_i */
 
 /* Decimal printing without 32-bit division: it would pull library routines
  * whose arguments need internal RAM, of which there is none left. */
@@ -131,12 +132,12 @@ void bench_run(void) __banked
 		bench_num -= 10;
 		bench_val++;
 	}
-	bench_i = bench_num;
+	bench_tenth = bench_num;
 	bench_num = bench_val;
 	print_string("  (");
 	bench_dec();
 	write_char('.');
-	write_char('0' + bench_i);
+	write_char('0' + bench_tenth);
 	print_string(" clocks each at 125 MHz)\n");
 
 	bench_start();

@@ -24,6 +24,7 @@
 #include "bench.h"
 #include "sflow.h"
 #include "memtest.h"
+#include "cable.h"
 #include "uip/uip.h"
 #include "version.h"
 
@@ -1964,6 +1965,12 @@ void cmd_parser(void) __banked
 			bench_run();
 		} else if (cmd_compare(0, "memtest")) {
 			memtest_run();
+		} else if (cmd_compare(0, "cable")) {
+			if (cmd_words_len < 2 || !cmd_parse_port_separator(cmd_words_b[1]))
+				cmd_error("Usage: cable <port> [force]\n");
+			else
+				cable_test(atoi_results_u8
+					   | (cmd_words_len > 2 && cmd_compare(2, "force") ? CABLE_FORCE : 0));
 		} else if (cmd_compare(0, "rollback")) {
 			if (cmd_words_len > 1 && cmd_compare(1, "restore"))
 				rollback_restore();
