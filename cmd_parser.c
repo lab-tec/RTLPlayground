@@ -22,6 +22,7 @@
 #include "syslog.h"
 #include "rollback.h"
 #include "bench.h"
+#include "memtest.h"
 #include "uip/uip.h"
 #include "version.h"
 
@@ -1958,6 +1959,8 @@ void cmd_parser(void) __banked
 #endif
 		} else if (cmd_compare(0, "bench")) {
 			bench_run();
+		} else if (cmd_compare(0, "memtest")) {
+			memtest_run();
 		} else if (cmd_compare(0, "rollback")) {
 			if (cmd_words_len > 1 && cmd_compare(1, "restore"))
 				rollback_restore();
