@@ -74,7 +74,8 @@ SRCS = \
 	syslog.c \
 	udp_apps.c \
 	rollback.c \
-	bench.c
+	bench.c \
+	memtest.c
 
 # RTL837x
 SRCS += \

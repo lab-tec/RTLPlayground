@@ -30,7 +30,8 @@ TESTS = $(BUILDDIR)/test_cmd_editor \
         $(BUILDDIR)/test_httpd_tx \
         $(BUILDDIR)/test_tick_gate \
         $(BUILDDIR)/test_rollback \
-        $(BUILDDIR)/test_sflow
+        $(BUILDDIR)/test_sflow \
+        $(BUILDDIR)/test_memtest
 
 # The table tests link the register mock and one environment file; stub/
 # stands in for the two headers a firmware build generates.
@@ -56,6 +57,10 @@ $(BUILDDIR)/test_sflow: test_sflow.c hw_mock.c $(SRCROOT)/sflow.c | $(BUILDDIR)
 
 # rollback.c is compiled UNMODIFIED; the test carries the flash model.
 $(BUILDDIR)/test_rollback: test_rollback.c $(SRCROOT)/rollback.c | $(BUILDDIR)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
+# memtest.c is compiled UNMODIFIED; the test carries the RAM model.
+$(BUILDDIR)/test_memtest: test_memtest.c $(SRCROOT)/memtest.c | $(BUILDDIR)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 $(BUILDDIR)/test_tick_gate: test_tick_gate.c support.c $(SRCROOT)/cmd_editor.c | $(BUILDDIR)
