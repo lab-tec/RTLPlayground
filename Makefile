@@ -77,7 +77,6 @@ SRCS = \
 	bench.c \
 	memtest.c \
 	tcpstat.c \
-	cable.c \
 	cfgpass.c
 
 # RTL837x

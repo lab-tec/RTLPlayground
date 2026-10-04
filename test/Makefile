@@ -32,7 +32,6 @@ TESTS = $(BUILDDIR)/test_cmd_editor \
         $(BUILDDIR)/test_rollback \
         $(BUILDDIR)/test_sflow \
         $(BUILDDIR)/test_memtest \
-        $(BUILDDIR)/test_cable \
         $(BUILDDIR)/test_cfgpass
 
 # The table tests link the register mock and one environment file; stub/
@@ -67,10 +66,6 @@ $(BUILDDIR)/test_memtest: test_memtest.c $(SRCROOT)/memtest.c | $(BUILDDIR)
 
 # cfgpass.c is compiled UNMODIFIED.
 $(BUILDDIR)/test_cfgpass: test_cfgpass.c $(SRCROOT)/cfgpass.c | $(BUILDDIR)
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
-
-# cable.c is compiled UNMODIFIED; the test carries the PHY model.
-$(BUILDDIR)/test_cable: test_cable.c hw_mock.c $(SRCROOT)/cable.c | $(BUILDDIR)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 $(BUILDDIR)/test_tick_gate: test_tick_gate.c support.c $(SRCROOT)/cmd_editor.c | $(BUILDDIR)
