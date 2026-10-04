@@ -472,6 +472,20 @@ button.danger{background:var(--bad);color:#fff;border-color:transparent}
   <div id="mbody"></div><div id="mfoot"></div>
 </div></div>
 
-<script src="/app.js"></script>
+<script>
+/* If app.js never arrives (the switch serves one connection at a time, and a
+ * busy or lossy link can cut a transfer), say so rather than leave an empty
+ * page. app.js sets appReady once it has started. */
+function appFailed(){
+  if(window.appReady||document.getElementById("appfail"))return;
+  var d=document.createElement("div");
+  d.id="appfail";
+  d.style.cssText="position:fixed;top:0;left:0;right:0;z-index:99;padding:12px 16px;background:#b3261e;color:#fff;font:14px sans-serif";
+  d.textContent="The page's script didn't finish loading from the switch. It serves one connection at a time: close other tabs open on it, then reload this page.";
+  document.body.appendChild(d);
+}
+setTimeout(appFailed,20000);
+</script>
+<script src="/app.js" onerror="appFailed()"></script>
 </body>
 </html>
