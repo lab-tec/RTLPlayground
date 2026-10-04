@@ -64,6 +64,8 @@
 #define TICK_NS		5000000L	/* SYS_TICK_HZ 200, as on the switch */
 #define FLASH_SIZE	0x200000
 
+static uint8_t flash[0x200000];	/* the "flash", see below */
+
 /* ---- console ------------------------------------------------------------ */
 
 uint8_t cmd_capture;
@@ -119,12 +121,19 @@ void execute_config(void) { }
 void clear_command_history(void) { }
 
 /* /cmd: a stub console that answers every command with one line, except
- * "tcp", which runs the firmware's tcpstat.c. */
+ * "tcp", which runs the firmware's tcpstat.c, and "webtap-config". */
 void execute_commands(uint8_t *p)
 {
 	err_status = ERR_OK;
 	if (!strncmp((char *)p, "tcp", 3) && (!p[3] || p[3] == '\n')) {
 		tcp_stats();
+		return;
+	}
+	/* Harness only: the startup configuration as stored in "flash", to
+	 * check what a save through POST /config really wrote. */
+	if (!strncmp((char *)p, "webtap-config", 13)) {
+		for (uint32_t a = CONFIG_START; a < CONFIG_START + 2048 && flash[a] && flash[a] != 0xff; a++)
+			write_char(flash[a]);
 		return;
 	}
 	print_string("webtap: ");
@@ -213,7 +222,6 @@ void    print_phys_port(uint8_t port) { itoa_short(machine.log_to_phys_port[port
 
 /* ---- flash: the firmware image, plus room for an upload ------------------ */
 
-static uint8_t flash[FLASH_SIZE];
 uint32_t flash_size = FLASH_SIZE;
 uint8_t flash_buf[FLASH_BUF_SIZE];
 struct flash_region_t flash_region;

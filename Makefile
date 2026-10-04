@@ -76,7 +76,9 @@ SRCS = \
 	rollback.c \
 	bench.c \
 	memtest.c \
-	tcpstat.c
+	tcpstat.c \
+	cable.c \
+	cfgpass.c
 
 # RTL837x
 SRCS += \

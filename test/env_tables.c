@@ -80,6 +80,7 @@ char     sfp_module_vendor[2][17];
 char     sfp_module_model[2][17];
 char     sfp_module_serial[2][17];
 char     hostname[24] = "hosttest";
+char     passwd[21];          /* cfgpass.c keeps it out of what page_impl sends */
 char     port_names[9][PORT_NAME_SIZE];
 struct flash_region_t flash_region;
 struct syslog_state syslog_state;

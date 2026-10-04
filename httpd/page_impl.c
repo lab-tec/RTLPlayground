@@ -16,6 +16,7 @@
 #include "rtl837x_stp.h"
 #include "page_impl.h"
 #include "syslog.h"
+#include "cfgpass.h"
 
 // #define DEBUG
 #include "debug.h"
@@ -1059,13 +1060,18 @@ found_end:
 	flash_region.addr = CONFIG_START;
 	flash_region.len = valid_len;
 	flash_read_bulk(outbuf + slen);
-	slen += valid_len;
+	// the password stays out of what the web interface shows
+	cfgpass_buf = outbuf + slen;
+	cfgpass_len = valid_len;
+	cfgpass_hide();
+	slen += cfgpass_len;
 }
 
 void send_cmd_log(void)
 {
 	dbg_string("send_cmd_log called\n");
 	slen = strtox(outbuf, HTTP_RESPONCE_TXT);
+	__xdata uint16_t hdr = slen;
 	__xdata uint16_t p = (cmd_history_ptr + 1) & CMD_HISTORY_MASK;
 	__xdata uint8_t found_begin = 0;
 	dbg_string("History ptr: ");
@@ -1077,6 +1083,11 @@ void send_cmd_log(void)
 			outbuf[slen++] = cmd_history[p];
 		p = (p + 1) & CMD_HISTORY_MASK;
 	}
+	// a password set from the console or the System page stays out of it
+	cfgpass_buf = outbuf + hdr;
+	cfgpass_len = slen - hdr;
+	cfgpass_hide();
+	slen = hdr + cfgpass_len;
 }
 
 

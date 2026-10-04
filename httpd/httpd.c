@@ -7,6 +7,7 @@
 #include "rtl837x_flash.h"
 #include "uip.h"
 #include "html_data.h"
+#include "cfgpass.h"
 
 // #define DEBUG
 #include "debug.h"
@@ -465,6 +466,15 @@ static uint8_t config_take(void)
 					else if (++cfg_run >= CMD_BUF_SIZE - 1)
 						return 2;
 				}
+				// the web interface never sees the password: keep the running one
+				cfgpass_buf = config_buf + cfg_body;
+				cfgpass_len = cfg_end - cfg_body;
+				cfgpass_floor = config_buf + cfg_pos;
+				if (!cfgpass_keep())
+					return 2;
+				cfg_body = cfgpass_buf - config_buf;
+				if (cfg_end - cfg_body + 1 > CONFIG_LEN)
+					return 2;
 				config_buf[cfg_end] = 0;
 				flash_region.addr = CONFIG_START;
 				flash_sector_erase();

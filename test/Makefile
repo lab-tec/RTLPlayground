@@ -31,12 +31,14 @@ TESTS = $(BUILDDIR)/test_cmd_editor \
         $(BUILDDIR)/test_tick_gate \
         $(BUILDDIR)/test_rollback \
         $(BUILDDIR)/test_sflow \
-        $(BUILDDIR)/test_memtest
+        $(BUILDDIR)/test_memtest \
+        $(BUILDDIR)/test_cable \
+        $(BUILDDIR)/test_cfgpass
 
 # The table tests link the register mock and one environment file; stub/
 # stands in for the two headers a firmware build generates.
 TABLE_ENV = support.c hw_mock.c env_tables.c $(SRCROOT)/cmd_editor.c \
-            $(SRCROOT)/rtl837x_port.c $(SRCROOT)/httpd/page_impl.c
+            $(SRCROOT)/rtl837x_port.c $(SRCROOT)/httpd/page_impl.c $(SRCROOT)/cfgpass.c
 
 all: run
 
@@ -63,6 +65,14 @@ $(BUILDDIR)/test_rollback: test_rollback.c $(SRCROOT)/rollback.c | $(BUILDDIR)
 $(BUILDDIR)/test_memtest: test_memtest.c $(SRCROOT)/memtest.c | $(BUILDDIR)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
+# cfgpass.c is compiled UNMODIFIED.
+$(BUILDDIR)/test_cfgpass: test_cfgpass.c $(SRCROOT)/cfgpass.c | $(BUILDDIR)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
+# cable.c is compiled UNMODIFIED; the test carries the PHY model.
+$(BUILDDIR)/test_cable: test_cable.c hw_mock.c $(SRCROOT)/cable.c | $(BUILDDIR)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
 $(BUILDDIR)/test_tick_gate: test_tick_gate.c support.c $(SRCROOT)/cmd_editor.c | $(BUILDDIR)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
@@ -71,7 +81,7 @@ $(BUILDDIR)/test_page_json: test_page_json.c $(TABLE_ENV) hw_mock.h | $(BUILDDIR
 
 # httpd/httpd.c and uip/uip.c are compiled UNMODIFIED from the firmware tree;
 # this test carries the environment below them itself.
-$(BUILDDIR)/test_httpd_tx: test_httpd_tx.c $(SRCROOT)/httpd/httpd.c $(SRCROOT)/uip/uip.c | $(BUILDDIR)
+$(BUILDDIR)/test_httpd_tx: test_httpd_tx.c $(SRCROOT)/httpd/httpd.c $(SRCROOT)/uip/uip.c $(SRCROOT)/cfgpass.c | $(BUILDDIR)
 	$(CC) $(CFLAGS) $(filter %.c,$^) -o $@ $(LDFLAGS)
 
 # webtap: the firmware's real web stack on a TAP interface, for a browser or
@@ -80,7 +90,7 @@ $(BUILDDIR)/test_httpd_tx: test_httpd_tx.c $(SRCROOT)/httpd/httpd.c $(SRCROOT)/u
 # build's own html_data.h and version.h ahead of stub/'s stand-ins.
 WEBTAP_SRC = webtap.c hw_mock.c $(SRCROOT)/uip/uip.c $(SRCROOT)/uip/uip_arp.c \
              $(SRCROOT)/httpd/httpd.c $(SRCROOT)/httpd/page_impl.c $(SRCROOT)/rtl837x_port.c \
-             $(SRCROOT)/html_data.c $(SRCROOT)/tcpstat.c
+             $(SRCROOT)/html_data.c $(SRCROOT)/tcpstat.c $(SRCROOT)/cfgpass.c
 $(BUILDDIR)/webtap: $(WEBTAP_SRC) | $(BUILDDIR)
 	$(CC) $(CFLAGS) -iquote $(SRCROOT) -Wno-unused-variable -Wno-missing-field-initializers $(WEBTAP_SRC) -o $@ $(LDFLAGS)
 webtap: $(BUILDDIR)/webtap
