@@ -74,6 +74,17 @@ $(BUILDDIR)/test_page_json: test_page_json.c $(TABLE_ENV) hw_mock.h | $(BUILDDIR
 $(BUILDDIR)/test_httpd_tx: test_httpd_tx.c $(SRCROOT)/httpd/httpd.c $(SRCROOT)/uip/uip.c | $(BUILDDIR)
 	$(CC) $(CFLAGS) $(filter %.c,$^) -o $@ $(LDFLAGS)
 
+# webtap: the firmware's real web stack on a TAP interface, for a browser or
+# Playwright to talk to (test/webtap.c). Needs html_data.c from a firmware
+# build, and CAP_NET_ADMIN to run. Not part of "make run". -iquote puts the
+# build's own html_data.h and version.h ahead of stub/'s stand-ins.
+WEBTAP_SRC = webtap.c hw_mock.c $(SRCROOT)/uip/uip.c $(SRCROOT)/uip/uip_arp.c \
+             $(SRCROOT)/httpd/httpd.c $(SRCROOT)/httpd/page_impl.c $(SRCROOT)/rtl837x_port.c \
+             $(SRCROOT)/html_data.c $(SRCROOT)/tcpstat.c
+$(BUILDDIR)/webtap: $(WEBTAP_SRC) | $(BUILDDIR)
+	$(CC) $(CFLAGS) -iquote $(SRCROOT) -Wno-unused-variable -Wno-missing-field-initializers $(WEBTAP_SRC) -o $@ $(LDFLAGS)
+webtap: $(BUILDDIR)/webtap
+
 run: $(TESTS)
 	@fail=0; for t in $(TESTS); do \
 		echo "=== $$t ==="; \
@@ -85,4 +96,4 @@ run: $(TESTS)
 clean:
 	rm -rf $(BUILDDIR)
 
-.PHONY: all run clean
+.PHONY: all run clean webtap
