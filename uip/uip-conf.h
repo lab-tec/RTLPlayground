@@ -109,7 +109,25 @@ typedef unsigned short uip_stats_t;
  * \hideinitializer
  */
 #define UIP_CONF_IDLE_PERIODS 200
-#define UIP_CONF_IDLE_TIMEOUT 30
+/* Longer than Chrome's 10 s for an unused spare connection, so the browser
+ * closes those itself rather than meeting a reset as it starts to use one.
+ * A client waiting for the connection takes over one silent for over two
+ * seconds anyway (uip.c, found_listen). */
+#define UIP_CONF_IDLE_TIMEOUT 15
+
+/*
+ * uip_periodic() runs on every 5 ms tick here, not on uIP's 0.5 s pulse, so
+ * the stock settings gave up on a connection after about 1.25 s without an
+ * ACK (0.5 s during the handshake): a Wi-Fi hiccup was enough to reset a
+ * page load or an upload. The first retransmission stays quick (UIP_RTO 3,
+ * 15 ms; uIP has one segment in flight, so a slow first retry costs every
+ * random loss dearly), and the backoff grows further instead: up to
+ * 3 << 6 = 192 pulses (just under 1 s, within the 8-bit timer), 10 tries
+ * for data (given up after about 5 s) and 8 for the handshake (about 3 s).
+ */
+#define UIP_CONF_RTO_SHIFT_MAX 6
+#define UIP_CONF_MAXRTX 10
+#define UIP_CONF_MAXSYNRTX 8
 
 /**
  * Maximum number of listening TCP ports. TODO: increase this!

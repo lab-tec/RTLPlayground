@@ -275,9 +275,14 @@
 /**
  * The initial retransmission timeout counted in timer pulses.
  *
- * This should not be changed.
+ * This should not be changed, at uIP's intended 0.5 s timer pulse. A port
+ * that pulses faster sets UIP_CONF_RTO, see uip-conf.h.
  */
+#ifdef UIP_CONF_RTO
+#define UIP_RTO         UIP_CONF_RTO
+#else
 #define UIP_RTO         3
+#endif
 
 /**
  * The maximum number of times a segment should be retransmitted
@@ -285,7 +290,21 @@
  *
  * This should not be changed.
  */
+#ifdef UIP_CONF_MAXRTX
+#define UIP_MAXRTX      UIP_CONF_MAXRTX
+#else
 #define UIP_MAXRTX      8
+#endif
+
+/**
+ * The largest backoff shift: a retransmission waits at most
+ * UIP_RTO << UIP_RTO_SHIFT_MAX timer pulses, which must fit the 8-bit timer.
+ */
+#ifdef UIP_CONF_RTO_SHIFT_MAX
+#define UIP_RTO_SHIFT_MAX UIP_CONF_RTO_SHIFT_MAX
+#else
+#define UIP_RTO_SHIFT_MAX 4
+#endif
 
 /**
  * The maximum number of times a SYN segment should be retransmitted
@@ -294,7 +313,11 @@
  *
  * This should not need to be changed.
  */
+#ifdef UIP_CONF_MAXSYNRTX
+#define UIP_MAXSYNRTX      UIP_CONF_MAXSYNRTX
+#else
 #define UIP_MAXSYNRTX      5
+#endif
 
 /**
  * The TCP maximum segment size.

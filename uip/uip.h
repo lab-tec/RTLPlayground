@@ -1275,6 +1275,12 @@ struct uip_stats {
     uip_stats_t rexmit;   /**< Number of retransmitted TCP segments. */
     uip_stats_t syndrop;  /**< Number of dropped SYNs due to too few
 			     connections was avaliable. */
+    uip_stats_t takeover; /**< Number of SYNs given the connection of a
+			     client that had gone quiet. */
+    uip_stats_t idle;     /**< Number of connections reset after
+			     UIP_IDLE_TIMEOUT seconds of silence. */
+    uip_stats_t timeout;  /**< Number of connections given up after
+			     UIP_MAXRTX retransmissions. */
     uip_stats_t synrst;   /**< Number of SYNs for closed ports,
 			     triggering a RST. */
   } tcp;                  /**< TCP statistics. */

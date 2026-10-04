@@ -757,6 +757,7 @@ uip_process(u8_t flag) __banked
 	if(uip_idle_age &&
 	   (uip_connr->tcpstateflags & UIP_TS_MASK) == UIP_ESTABLISHED &&
 	   ++(uip_connr->timer) >= UIP_IDLE_TIMEOUT) {
+	  UIP_STAT(++uip_stat.tcp.idle);
 	  uip_connr->tcpstateflags = UIP_CLOSED;
 	  uip_flags = UIP_TIMEDOUT;
 	  UIP_APPCALL();
@@ -772,6 +773,7 @@ uip_process(u8_t flag) __banked
 	       uip_connr->tcpstateflags == UIP_SYN_RCVD) &&
 	      uip_connr->nrtx == UIP_MAXSYNRTX)) {
 	    uip_connr->tcpstateflags = UIP_CLOSED;
+	    UIP_STAT(++uip_stat.tcp.timeout);
 
 	    /* We call UIP_APPCALL() with uip_flags set to
 	       UIP_TIMEDOUT to inform the application that the
@@ -787,8 +789,8 @@ uip_process(u8_t flag) __banked
 	  }
 
 	  /* Exponential backoff. */
-	  uip_connr->timer = UIP_RTO << (uip_connr->nrtx > 4?
-					 4:
+	  uip_connr->timer = UIP_RTO << (uip_connr->nrtx > UIP_RTO_SHIFT_MAX?
+					 UIP_RTO_SHIFT_MAX:
 					 uip_connr->nrtx);
 	  ++(uip_connr->nrtx);
 	  
@@ -1323,6 +1325,42 @@ uip_process(u8_t flag) __banked
     }
   }
 
+#if UIP_IDLE_TIMEOUT
+  /* Every connection is taken. Dropping the SYN costs its sender a second
+     or more before it retries, and with a single connection that is what
+     made pages slow, so give it a connection that no longer matters:
+     - one that is only closing, and whose client has nothing left to hear:
+       FIN_WAIT_2 (our FIN acknowledged), or CLOSING and LAST_ACK (the client
+       closed too). A browser sends its next request as soon as a response
+       arrives, often before the close handshake has finished. Not
+       FIN_WAIT_1: httpd's responses have no Content-Length, so our FIN is
+       how the client knows the response is complete, and a reset in its
+       place fails the response.
+     - one whose client has been silent for over two seconds (the idle
+       count, kept in the timer while nothing is in flight, has passed 2).
+       Browsers open spare connections ahead of time and may never use them.
+       A shorter wait takes over live connections on a lossy link, where a
+       client's retransmissions leave gaps of a second or more.
+     The application hears the old connection time out first; that client's
+     next segment finds no connection and is answered with a reset. */
+  if(uip_connr == 0) {
+    for(c = 0; c < UIP_CONNS; ++c) {
+      opt = uip_conns[c].tcpstateflags & UIP_TS_MASK;
+      if(opt == UIP_FIN_WAIT_2 || opt == UIP_CLOSING || opt == UIP_LAST_ACK ||
+	 (opt == UIP_ESTABLISHED &&
+	  !uip_outstanding(&uip_conns[c]) && uip_conns[c].timer >= 3)) {
+	uip_connr = &uip_conns[c];
+	uip_conn = uip_connr;
+	uip_flags = UIP_TIMEDOUT;
+	UIP_APPCALL();
+	uip_flags = 0;
+	UIP_STAT(++uip_stat.tcp.takeover);
+	break;
+      }
+    }
+  }
+#endif /* UIP_IDLE_TIMEOUT */
+
   if(uip_connr == 0) {
     /* All connections are used already, we drop packet and hope that
        the remote end will retransmit the packet at a time when we
@@ -1509,6 +1547,12 @@ uip_process(u8_t flag) __banked
       uip_connr->tcpstateflags = UIP_ESTABLISHED;
       uip_flags = UIP_CONNECTED;
       uip_connr->len = 0;
+#if UIP_IDLE_TIMEOUT
+      /* Nothing is in flight now, so the timer counts idle seconds: start
+	 them at zero, not at the SYNACK's retransmission timeout, which
+	 made a fresh connection look idle for seconds already. */
+      uip_connr->timer = 0;
+#endif /* UIP_IDLE_TIMEOUT */
       if(uip_len > 0) {
         uip_flags |= UIP_NEWDATA;
         uip_add_rcv_nxt(uip_len);
