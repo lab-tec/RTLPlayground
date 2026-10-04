@@ -376,6 +376,30 @@ button.danger{background:var(--bad);color:#fff;border-color:transparent}
         <label class="row"><span class="lb" data-i18n="sf_sent">Datagrams sent</span><span class="mono" id="sfsent">-</span></label>
       </div>
     </section>
+    <section class="tab" id="tab-diag">
+      <div class="card"><h2><span data-i18n="dg_cable">Cable test</span> <span class="hint" data-i18n="dg_cable_h">each wire pair: OK, open or shorted, with the distance</span></h2>
+        <div id="dg-cable" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        <pre class="cfg" id="dg-cout" style="margin-top:10px;min-height:70px;max-height:220px;overflow:auto"></pre>
+      </div>
+      <div class="card"><h2 data-i18n="dg_status">Status</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="ctl" id="dg-links" data-i18n="dg_links">Links</button>
+          <button class="ctl" id="dg-health" data-i18n="dg_health">Health</button>
+          <button class="ctl" id="dg-thermal" data-i18n="dg_thermal">Temperature</button>
+          <button class="ctl" id="dg-macs" data-i18n="dg_macs">Devices</button>
+          <button class="ctl" id="dg-revert" data-i18n="dg_revert">Revert timer</button>
+          <button class="ctl" id="dg-boot" data-i18n="dg_boot">Last boot</button>
+        </div>
+        <pre class="cfg" id="dg-sout" style="margin-top:10px;min-height:70px;max-height:260px;overflow:auto"></pre>
+      </div>
+      <div class="card"><h2><span data-i18n="dg_ping">Ping</span> <span class="hint" data-i18n="dg_ping_h">four requests, one a second; results after about 7 s</span></h2>
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+          <input class="in" id="dg-ip" type="text" style="width:10em">
+          <button class="ctl pri" id="dg-pingbtn" data-i18n="dg_ping">Ping</button>
+        </div>
+        <pre class="cfg" id="dg-pout" style="margin-top:10px;min-height:50px;max-height:160px;overflow:auto"></pre>
+      </div>
+    </section>
     <section class="tab" id="tab-system">
       <div class="grid2">
         <div class="card"><h2 data-i18n="sy_network">Network</h2>

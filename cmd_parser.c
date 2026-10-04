@@ -25,6 +25,7 @@
 #include "sflow.h"
 #include "memtest.h"
 #include "cable.h"
+#include "kadam.h"
 #include "uip/uip.h"
 #include "version.h"
 
@@ -1824,6 +1825,7 @@ void cmd_parser(void) __banked
 	if (cmd_words_len >= 1) {
 		if (cmd_compare(0, "reset")) {
 			print_string("\nRESET\n\n");
+			reboot_note(REBOOT_CMD);
 			reset_chip();
 		} else if (cmd_compare(0, "sfp")) {
 			parse_sfp();
@@ -2046,8 +2048,7 @@ void cmd_parser(void) __banked
 			parse_ingress();
 		} else if (cmd_compare(0, "session")) {
 			parse_session();
-		}
-		else {
+		} else if (!kadam_cmd()) {
 			cmd_error("Unknown command\n");
 		}
 

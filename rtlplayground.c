@@ -23,6 +23,7 @@
 #include "uip/uipopt.h"
 #include "uip/uip.h"
 #include "uip/uip_arp.h"
+#include "kadam.h"
 #include "machine.h"
 #include "phy.h"
 #include "syslog.h"
@@ -1158,6 +1159,7 @@ void handle_button(void)
 				print_string(">10s button detected; reverting to default settings:\n");
 				flash_default_config();
 				print_string("Now resetting...\n");
+				reboot_note(REBOOT_DEFAULTS);
 				reset_chip();
 			}
 			else if (diff_sec_counter > 3)
@@ -1256,6 +1258,8 @@ static void handle_tick(void)
 			arp_age_secs = 0;
 			uip_arp_timer();
 		}
+		if (idle_ready)
+			kadam_second();
 
 #ifdef DEBUG
 		print_sfr_data();
@@ -1335,6 +1339,9 @@ void sleep(uint16_t t)
 
 void reset_chip(void)
 {
+	/* Tell the next boot why, unless the caller already did (kadam.h) */
+	if (reboot_why() == REBOOT_NONE)
+		reboot_note(REBOOT_SOFT);
 	REG_SET(RTL837X_REG_RESET, 1);
 	while(1);
 }
@@ -1611,6 +1618,9 @@ void check_and_flash_update_image(void)
 			}
 			print_string("Done.\nResetting now");
 			delay(200);
+			/* A rollback being installed says so already */
+			if (reboot_why() != REBOOT_ROLLBACK)
+				reboot_note(REBOOT_UPGRADE);
 			reset_chip();
 		}
 		print_string("Checksum incorrect, please upload the image again\n");
@@ -1763,6 +1773,8 @@ void main(void)
 
 	syslog_init();
 	sflow_init();
+	/* Before the startup configuration, which may override its defaults */
+	kadam_init();
 
 #ifdef DEBUG
 	// This register seems to work on the RTL8373 only if also the SDS

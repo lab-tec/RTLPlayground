@@ -77,7 +77,15 @@ SRCS = \
 	bench.c \
 	memtest.c \
 	cable.c \
-	cfgpass.c
+	cfgpass.c \
+	kadam.c \
+	reboot.c \
+	revert.c \
+	thermal.c \
+	bootmsg.c \
+	linkwatch.c \
+	macwatch.c \
+	ping.c
 
 # RTL837x
 SRCS += \

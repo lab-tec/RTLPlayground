@@ -30,6 +30,7 @@
 #include "rtl837x_common.h"
 #include "rtl837x_flash.h"
 #include "rollback.h"
+#include "kadam.h"
 #include "version.h"
 
 #define RB_MAGIC_0		'K'
@@ -137,6 +138,7 @@ void rollback_backup(void)
 	if (rb_header_read() && flash_buf[RB_STATE] == RB_STATE_RESTORING) {
 		/* Installing the backup itself: keep it, and clear the mark */
 		print_string("\nInstalling the firmware backup; keeping the backup.\n");
+		reboot_note(REBOOT_ROLLBACK);
 		flash_buf[RB_STATE] = RB_STATE_IDLE;
 		rb_header_write();
 		return;
@@ -250,5 +252,6 @@ void rollback_restore(void)
 
 	print_string(" Done.\nResetting to install it.\n");
 	delay(200);
+	reboot_note(REBOOT_ROLLBACK);
 	reset_chip();
 }

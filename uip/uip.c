@@ -83,6 +83,7 @@
 */
 
 #include "uip.h"
+#include "../kadam.h"
 #include "uipopt.h"
 #include "uip_arch.h"
 #include <stddef.h>
@@ -1011,6 +1012,9 @@ uip_process(u8_t flag) __banked
      the ICMP type from ECHO to ECHO_REPLY and adjust the ICMP
      checksum before we return the packet. */
   if(ICMPBUF->type != ICMP_ECHO) {
+    /* An answer to the switch's own ping (ping.c) */
+    if(ICMPBUF->type == ICMP_ECHO_REPLY)
+      ping_reply();
     UIP_STAT(++uip_stat.icmp.drop);
     UIP_STAT(++uip_stat.icmp.typeerr);
     UIP_LOG("icmp: not icmp echo.");

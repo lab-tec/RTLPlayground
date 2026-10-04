@@ -151,6 +151,10 @@ void send_lag(void) { }
 void send_stp(void) { }
 void send_stp_counters(void) { }
 void send_vlanlist(void) { }
+/* image D's hooks in httpd.c and uip.c (kadam.h) */
+void revert_saved(void) { }
+void ping_reply(void) { }
+void reboot_note(uint8_t why) { (void)why; }
 
 extern uint8_t authenticated;
 

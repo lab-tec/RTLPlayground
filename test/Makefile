@@ -33,7 +33,8 @@ TESTS = $(BUILDDIR)/test_cmd_editor \
         $(BUILDDIR)/test_sflow \
         $(BUILDDIR)/test_memtest \
         $(BUILDDIR)/test_cable \
-        $(BUILDDIR)/test_cfgpass
+        $(BUILDDIR)/test_cfgpass \
+        $(BUILDDIR)/test_kadam
 
 # The table tests link the register mock and one environment file; stub/
 # stands in for the two headers a firmware build generates.
@@ -58,7 +59,13 @@ $(BUILDDIR)/test_sflow: test_sflow.c hw_mock.c $(SRCROOT)/sflow.c | $(BUILDDIR)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 # rollback.c is compiled UNMODIFIED; the test carries the flash model.
-$(BUILDDIR)/test_rollback: test_rollback.c $(SRCROOT)/rollback.c | $(BUILDDIR)
+$(BUILDDIR)/test_rollback: test_rollback.c $(SRCROOT)/rollback.c $(SRCROOT)/reboot.c | $(BUILDDIR)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
+# Image D's modules are compiled UNMODIFIED against the register mock.
+KADAM_SRC = $(SRCROOT)/kadam.c $(SRCROOT)/reboot.c $(SRCROOT)/revert.c $(SRCROOT)/thermal.c \
+            $(SRCROOT)/bootmsg.c $(SRCROOT)/linkwatch.c $(SRCROOT)/macwatch.c $(SRCROOT)/ping.c
+$(BUILDDIR)/test_kadam: test_kadam.c hw_mock.c $(KADAM_SRC) | $(BUILDDIR)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 # cfgpass.c is compiled UNMODIFIED.

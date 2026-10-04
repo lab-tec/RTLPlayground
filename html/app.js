@@ -4,6 +4,11 @@ en:{
 nav_dash:"Dashboard",nav_ports:"Ports",nav_stp:"Spanning tree",nav_stats:"Statistics",
 nav_vlan:"VLANs",nav_l2:"MAC table",nav_mirror:"Mirroring",nav_lag:"LAG",nav_eee:"EEE",
 nav_bw:"Bandwidth",nav_system:"System",nav_fw:"Firmware",nav_sflow:"sFlow",
+nav_diag:"Diagnostics",dg_cable:"Cable test",dg_cable_h:"each wire pair: OK, open or shorted, with the distance",
+dg_status:"Status",dg_links:"Links",dg_health:"Health",dg_thermal:"Temperature",dg_macs:"Devices",
+dg_revert:"Revert timer",dg_boot:"Last boot",dg_ping:"Ping",dg_ping_h:"four requests, one a second; results after about 7 s",
+dg_running:"Running \"{c}\" …",dg_none:"(no output)",dg_port:"Port {p}",
+dg_force:"Port {p} has a link. The test takes it down for a few seconds. Test it anyway?",
 sf_title:"sFlow",sf_h:"counter samples, version 5",sf_ip:"Collector address",sf_port:"Collector port",sf_int:"Counter interval [s]",
 sf_sending:"Sending",sf_sent:"Datagrams sent",sf_wait:"waiting for a collector address",sf_ip_err:"Enter the IPv4 address of the collector",
 sf_note:"Each datagram carries the counters of one port, and the ports take turns within the interval. Settings apply immediately; use Save to flash to keep them.",
@@ -683,6 +688,7 @@ var CONF_CMDS=[
   /^stp\s+(port\s+\d{1,2}|lag\s+[1-4])\s+guard\s+(none|bpdu|root)$/,/^stp\s+(port\s+\d{1,2}|lag\s+[1-4])\s+filter\s+(on|off)$/,
   /^stp\s+(port\s+\d{1,2}|lag\s+[1-4])\s+p2p\s+(auto|on|off)$/,
   /^igmp\s+(on|off)$/,/^mtu\s+\d{1,2}\s+\d+$/,
+  /^thermal\s+warn\s+\d{1,3}\s+crit\s+\d{1,3}$/,/^macwatch\s+(on|off)$/,/^macwatch\s+ports(\s+\d)+$/,
   /^bw\s+(in|out)\s+\d{1,2}\s+\S+$/,
   /^storm\s+\d{1,2}\s+(bcast|mcast|ucast|umcast)\s+(off|\d{1,8}\s+(pps|kbps))$/,
 ];
@@ -746,6 +752,7 @@ var TABS=[
   {id:"eee",   icon:"M13 2L4 14h6l-1 8 9-12h-6z"},
   {id:"bw",    icon:"M4 18a8 8 0 0116 0M12 18l4-6"},
   {id:"sflow", icon:"M2 12h4l3-8 4 16 3-8h6"},
+  {id:"diag",  icon:"M14.5 4a4.5 4.5 0 00-4.2 6.1L4 16.4 7.6 20l6.3-6.3A4.5 4.5 0 0020 9.5l-3 3-3.5-3.5 3-3a4.5 4.5 0 00-2-.5z"},
   {id:"system",icon:"M12 8a4 4 0 100 8 4 4 0 000-8zM4 12h2M18 12h2M12 4v2M12 18v2M6 6l1.5 1.5M16.5 16.5L18 18M18 6l-1.5 1.5M7.5 16.5L6 18"},
   {id:"fw",    icon:"M12 3v12M8 11l4 4 4-4M4 19h16"},
 ];
@@ -1950,6 +1957,41 @@ $("sfapply").addEventListener("click",function(){
 $("sfrefresh").addEventListener("click",function(){sfDirty=false;sfLoad()});
 tabHooks.sflow={enter:function(){sfDirty=false;sfLoad()}};
 
+/* Diagnostics: console commands run through /cmd, their output shown as is */
+function diagRun(cmd,out){
+  out.textContent=t("dg_running",{c:cmd});
+  return api("/cmd",{method:"POST",body:cmd}).then(function(r){
+    var b=(r.body||"").trim();
+    out.textContent=b||t("dg_none");
+    return b;
+  },function(){out.textContent=t("t_failed",{c:cmd});return ""});
+}
+(function(){
+  var box=$("dg-cable");
+  for(var p=1;p<=8;p++)(function(p){
+    box.appendChild(h("button",{class:"ctl",text:t("dg_port",{p:p}),onclick:function(){
+      diagRun("cable "+p,$("dg-cout")).then(function(o){
+        if(/has a link/.test(o)&&confirm(t("dg_force",{p:p})))diagRun("cable "+p+" force",$("dg-cout"));
+      });
+    }}));
+  })(p);
+  [["dg-links","linkwatch"],["dg-health","health"],["dg-thermal","thermal"],["dg-macs","macwatch"],
+   ["dg-revert","revert"],["dg-boot","boot"]].forEach(function(x){
+    $(x[0]).addEventListener("click",function(){diagRun(x[1],$("dg-sout"))});
+  });
+  $("dg-pingbtn").addEventListener("click",function(){
+    var ip=$("dg-ip").value.trim();
+    if(!/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)){toast(t("sf_ip_err"),"err");return;}
+    diagRun("ping "+ip,$("dg-pout")).then(function(){
+      setTimeout(function(){diagRun("ping",$("dg-pout"))},7500);
+    });
+  });
+})();
+tabHooks.diag={enter:function(){
+  if(!$("dg-ip").value&&S.info&&S.info.ip_gateway)$("dg-ip").value=S.info.ip_gateway;
+  diagRun("linkwatch",$("dg-sout"));
+}};
+
 var CONF_OVERWRITE=[
   /^ip\b/,/^gw\b/,/^netmask\b/,/^hostname\b/,
   /^syslog\s+ip\b/,/^syslog\s+port\b/,/^sflow\s+collector\b/,/^sflow\s+interval\b/,/^passwd\b/,/^session\b/,
@@ -1960,9 +2002,9 @@ var CONF_OVERWRITE=[
   /^lag\s+\d\b/,/^laghash\s+\d\b/,/^isolate\s+\d{1,2}\b/,
   /^stp\s+(prio|hello|maxage|fwd|txhold|version)\b/,
   /^stp\s+(port\s+\d{1,2}|lag\s+[1-4])\s+(edge|cost|prio|guard|filter|p2p)\b/,
-  /^igmp\b/,/^mtu\s+\d{1,2}\b/,/^storm\s+\d{1,2}\s+(bcast|mcast|ucast|umcast)\b/,
+  /^igmp\b/,/^mtu\s+\d{1,2}\b/,/^thermal\s+warn\b/,/^macwatch\s+ports\b/,/^storm\s+\d{1,2}\s+(bcast|mcast|ucast|umcast)\b/,
 ];
-var CONF_TOGGLE=[/^(syslog)\s+(on|off)$/,/^(sflow)\s+(on|off)$/,/^(stp)\s+(on|off)$/,/^(stp\s+(port\s+\d{1,2}|lag\s+[1-4]))\s+(on|off)$/];
+var CONF_TOGGLE=[/^(syslog)\s+(on|off)$/,/^(sflow)\s+(on|off)$/,/^(macwatch)\s+(on|off)$/,/^(stp)\s+(on|off)$/,/^(stp\s+(port\s+\d{1,2}|lag\s+[1-4]))\s+(on|off)$/];
 function mergeConf(base,texts){
   var conf=base.slice();
   function drop(rx){conf=conf.filter(function(c){return!rx.test(c)})}

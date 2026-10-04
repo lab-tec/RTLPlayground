@@ -17,6 +17,7 @@
 #include "phy.h"
 #include "boot.h"
 #include "rollback.h"
+#include "kadam.h"
 
 extern __code const struct machine machine;
 extern __xdata struct machine_runtime machine_detected;
@@ -128,6 +129,7 @@ void early_boot_handle_button(void) __banked
 		print_string("[Button held 10s-30s at boot; restoring default config]\n");
 		set_sys_led_state(SYS_LED_FAST);
 		flash_default_config();
+		reboot_note(REBOOT_DEFAULTS);
 		delay(3UL * SYS_TICK_HZ);
 	}
 }

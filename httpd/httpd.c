@@ -8,6 +8,7 @@
 #include "uip.h"
 #include "html_data.h"
 #include "cfgpass.h"
+#include "kadam.h"
 
 // #define DEBUG
 #include "debug.h"
@@ -447,6 +448,7 @@ static uint8_t config_take(void)
 				flash_region.addr = CONFIG_START;
 				flash_region.len = cfg_end - cfg_body + 1;
 				flash_write_bytes(config_buf + cfg_body);
+				revert_saved();
 				return 1;
 			}
 			cfg_hdr++;
@@ -942,6 +944,7 @@ void httpd_appcall(void)
 			// The upload verdict has been fully ACKed by the client;
 			// now it is safe to reset and apply the staged image
 			print_string("Resetting to apply update\n");
+			reboot_note(REBOOT_FWUPLOAD);
 			reset_chip();
 		}
 	} else if (uip_newdata() && s->tstate == TSTATE_POST) {
@@ -1054,6 +1057,7 @@ void httpd_appcall(void)
 			} else if (is_word(q, "/reset")) {
 				uip_close();
 				delay(1000); //wait for the close packet to be sent, otherwise the browser will retry
+				reboot_note(REBOOT_WEB);
 				reset_chip();
 			} else {
 				send_not_found();
